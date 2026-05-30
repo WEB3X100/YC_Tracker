@@ -1,0 +1,62 @@
+name: Brief Feedback
+description: Rate today's brief and help calibrate the signal for your niche
+title: "[FEEDBACK] Brief for YYYY-MM-DD — Replace with your niche"
+labels: ["brief-feedback"]
+body:
+  - type: input
+    id: date
+    attributes:
+      label: Brief date
+      placeholder: "2026-05-28"
+    validations:
+      required: true
+
+  - type: input
+    id: niche
+    attributes:
+      label: Niche
+      placeholder: "AI Developer Tools"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: quality
+    attributes:
+      label: Signal quality
+      description: How useful was this brief for your work today?
+      options:
+        - "5 — Changed how I think or what I will do today"
+        - "4 — One genuinely useful item worth keeping"
+        - "3 — Okay, nothing stood out"
+        - "2 — Mostly noise for my niche"
+        - "1 — Completely off-target"
+    validations:
+      required: true
+
+  - type: textarea
+    id: useful
+    attributes:
+      label: What was useful?
+      description: Name the specific item and why it mattered for your work
+      placeholder: "The graveyard lesson on Judicata was directly relevant because we are building the same workflow..."
+
+  - type: textarea
+    id: noise
+    attributes:
+      label: What was noise?
+      description: Items that were irrelevant, off-niche, or repeated from previous briefs
+      placeholder: "Company move #3 was a healthcare AI company — not relevant to legal AI"
+
+  - type: textarea
+    id: missed
+    attributes:
+      label: What did it miss?
+      description: Signals you saw today that the brief should have caught
+      placeholder: "The Ironclad pivot was on HN with 400 points — high signal for our niche"
+
+  - type: textarea
+    id: noise_add
+    attributes:
+      label: Suggest a noise filter
+      description: A pattern to add to the exclusion rules so it never appears again
+      placeholder: "Exclude: any article about YC healthcare AI if our niche is legal AI"

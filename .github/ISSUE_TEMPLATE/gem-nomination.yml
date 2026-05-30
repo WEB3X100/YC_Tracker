@@ -1,0 +1,63 @@
+name: Gem Nomination
+description: Nominate a startup as a gem candidate for the team's watchlist
+title: "[GEM] Company Name — YC Batch"
+labels: ["gem-nomination"]
+body:
+  - type: input
+    id: company
+    attributes:
+      label: Company name
+      placeholder: "Harvey"
+    validations:
+      required: true
+
+  - type: input
+    id: batch
+    attributes:
+      label: YC Batch
+      placeholder: "W24"
+    validations:
+      required: true
+
+  - type: input
+    id: niche
+    attributes:
+      label: Which niche does this apply to?
+      placeholder: "Legal AI"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: criteria
+    attributes:
+      label: Gem criteria met
+      description: Check all that apply. A gem needs 3 or more.
+      options:
+        - label: Category funded 3+ times in recent YC batches
+        - label: OpenAI token grant confirmed or strongly implied
+        - label: YC partner public endorsement on X or LinkedIn
+        - label: Category mentioned in Sam Altman or YC keynote or essay
+        - label: Founder has prior YC company or tier-1 operator background
+        - label: Live product with paying customers at batch launch
+        - label: Category aligns with OpenAI / Anthropic / Google API investment direction
+
+  - type: textarea
+    id: signal
+    attributes:
+      label: What triggered this nomination?
+      description: The specific signal or event that made you flag this company
+      placeholder: "Garry Tan retweeted their launch, they announced 50 enterprise customers in week 1, and their category (AI contract review) has 4 YC companies this batch"
+    validations:
+      required: true
+
+  - type: input
+    id: source
+    attributes:
+      label: Primary source URL
+      placeholder: "https://techcrunch.com/..."
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why does this matter for the VCOS team?
+      description: Strategic relevance — what should we pay attention to or do differently?

@@ -1,0 +1,45 @@
+name: YC Monthly Deep Dive
+
+on:
+  schedule:
+    - cron: '0 14 1 * *'  # 9:00 AM Toronto on 1st of month
+  workflow_dispatch:
+
+concurrency:
+  group: yc-monthly
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+
+      - run: pip install -r scripts/requirements.txt
+
+      - name: Generate monthly deep dive for all active niches
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+        run: python scripts/generate_brief.py monthly
+
+      - name: Commit results
+        run: |
+          git config user.email "yc-intel-agent@noreply.local"
+          git config user.name "YC Intelligence Agent"
+          git add data/
+          git diff --cached --quiet && echo "No changes" || \
+            git commit -m "intel: monthly deep dive $(date -u +%Y-%m)"
+          git push

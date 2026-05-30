@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YC Intelligence Tracker</title>
+  <style>
+    :root {
+      --bg: #0d0d14;
+      --surface: #15151f;
+      --surface2: #1a1a28;
+      --border: #252535;
+      --text: #e8e8f0;
+      --muted: #5a5a7a;
+      --orange: #ff6b00;
+      --teal: #00d4aa;
+      --red: #ff4444;
+      --yellow: #ffd60a;
+      --blue: #4a9eff;
+      --purple: #bf5af2;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.55; }
+
+    header {
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 10;
+    }
+    .logo { font-size: 17px; font-weight: 800; color: var(--orange); letter-spacing: -0.5px; white-space: nowrap; }
+    .logo span { color: var(--teal); }
+
+    .niche-select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      max-width: 220px;
+    }
+    .niche-select:focus { outline: none; border-color: var(--orange); }
+
+    .hdr-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .date-badge { color: var(--muted); font-size: 12px; font-family: monospace; }
+    .refresh-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.15s;
+    }
+    .refresh-btn:hover { border-color: var(--orange); color: var(--orange); }
+
+    nav {
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tab {
+      padding: 11px 16px;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--orange); border-bottom-color: var(--orange); }
+
+    main { max-width: 860px; margin: 0 auto; padding: 24px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 620px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      color: var(--muted);
+    }
+    .card-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 700;
+      margin-left: auto;
+    }
+    .badge-orange { background: rgba(255,107,0,0.15); color: var(--orange); }
+    .badge-teal   { background: rgba(0,212,170,0.15);  color: var(--teal); }
+    .badge-red    { background: rgba(255,68,68,0.15);  color: var(--red); }
+    .badge-yellow { background: rgba(255,214,10,0.12); color: var(--yellow); }
+    .badge-purple { background: rgba(191,90,242,0.15); color: var(--purple); }
+
+    .signal-text { font-size: 15px; font-weight: 500; line-height: 1.45; }
+
+    .item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .item:last-child { border-bottom: none; padding-bottom: 0; }
+    .item-title { font-weight: 600; margin-bottom: 3px; }
+    .item-meta { font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+    .item-body { font-size: 13px; opacity: 0.9; }
+    .item-link { color: var(--teal); text-decoration: none; font-size: 12px; margin-top: 4px; display: inline-block; }
+    .item-link:hover { text-decoration: underline; }
+
+    .gem-criteria { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+    .gem-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: rgba(255,214,10,0.12);
+      color: var(--yellow);
+      font-weight: 600;
+    }
+
+    .action-box {
+      background: var(--surface2);
+      border-left: 3px solid var(--orange);
+      padding: 12px 16px;
+      border-radius: 0 6px 6px 0;
+      font-size: 13px;
+    }
+
+    .reading-item { display: flex; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid var(--border); }
+    .reading-item:last-child { border-bottom: none; }
+    .reading-item a { color: var(--blue); text-decoration: none; font-weight: 500; font-size: 13px; }
+    .reading-item a:hover { text-decoration: underline; }
+    .reading-why { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .graveyard-block {
+      background: var(--surface2);
+      border-left: 3px solid var(--red);
+      padding: 14px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 14px;
+    }
+    .lesson-box {
+      background: rgba(0,212,170,0.07);
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--teal);
+    }
+
+    .empty { text-align: center; padding: 64px 24px; }
+    .empty-icon { font-size: 28px; margin-bottom: 12px; opacity: 0.4; }
+    .empty h3 { font-size: 15px; margin-bottom: 6px; opacity: 0.5; }
+    .empty p { font-size: 13px; color: var(--muted); }
+
+    .skeleton { background: var(--border); border-radius: 4px; animation: pulse 1.6s ease infinite; }
+    @keyframes pulse { 0%,100% { opacity: 0.35; } 50% { opacity: 0.7; } }
+
+    .error-box {
+      background: rgba(255,68,68,0.08);
+      border: 1px solid rgba(255,68,68,0.25);
+      border-radius: 8px;
+      padding: 16px;
+      color: var(--red);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .weekly-section { margin-bottom: 20px; }
+    .weekly-section h3 { font-size: 13px; font-weight: 700; color: var(--orange); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .weekly-item { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .weekly-item:last-child { border-bottom: none; }
+
+    .stat-row { display: flex; gap: 12px; margin-bottom: 16px; }
+    .stat-box {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+    .stat-num { font-size: 24px; font-weight: 800; color: var(--orange); }
+    .stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">YC<span>Intel</span></div>
+  <select class="niche-select" id="niche-select" onchange="selectNiche(this.value)">
+    <option value="">Loading...</option>
+  </select>
+  <div class="hdr-right">
+    <span class="date-badge" id="date-badge">—</span>
+    <button class="refresh-btn" onclick="loadNiche(currentNiche, true)">↻ Refresh</button>
+  </div>
+</header>
+
+<nav>
+  <div class="tab active" data-tab="today" onclick="switchTab('today')">Today</div>
+  <div class="tab" data-tab="gems" onclick="switchTab('gems')">Gems</div>
+  <div class="tab" data-tab="graveyard" onclick="switchTab('graveyard')">Graveyard</div>
+  <div class="tab" data-tab="weekly" onclick="switchTab('weekly')">Weekly</div>
+  <div class="tab" data-tab="monthly" onclick="switchTab('monthly')">Monthly</div>
+</nav>
+
+<main>
+  <div id="tab-today" class="tab-content active"><div id="today-content"></div></div>
+  <div id="tab-gems" class="tab-content"><div id="gems-content"></div></div>
+  <div id="tab-graveyard" class="tab-content"><div id="graveyard-content"></div></div>
+  <div id="tab-weekly" class="tab-content"><div id="weekly-content"></div></div>
+  <div id="tab-monthly" class="tab-content"><div id="monthly-content"></div></div>
+</main>
+
+<script>
+const C = {
+  owner: 'WEB3X100',
+  repo: 'YC_Tracker',
+  branch: 'main'
+};
+
+let currentNiche = null;
+let masterIndex = null;
+let cache = {};
+
+async function raw(path) {
+  const url = `https://raw.githubusercontent.com/${C.owner}/${C.repo}/${C.branch}/${path}?t=${Date.now()}`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status} — ${path}`);
+  return r.json();
+}
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+async function init() {
+  const todayEl = document.getElementById('today-content');
+  todayEl.innerHTML = skeletonHTML();
+  try {
+    masterIndex = await raw('data/index.json');
+    const niches = Object.values(masterIndex.niches || {});
+    const sel = document.getElementById('niche-select');
+    if (niches.length === 0) {
+      sel.innerHTML = '<option value="">No niches configured</option>';
+      todayEl.innerHTML = emptyHTML('No niches configured', 'Edit config/niches.json and run the first GitHub Action.');
+      return;
+    }
+    sel.innerHTML = niches.map(n =>
+      `<option value="${esc(n.slug)}">${esc(n.name)}</option>`
+    ).join('');
+    selectNiche(niches[0].slug);
+  } catch(e) {
+    todayEl.innerHTML = `<div class="error-box">
+      <strong>Could not load index</strong><br><br>
+      ${esc(e.message)}<br><br>
+      Make sure GitHub Actions has run at least once and committed <code>data/index.json</code>.
+      Check the Actions tab on the repo to trigger a manual run.
+    </div>`;
+  }
+}
+
+function selectNiche(slug) {
+  currentNiche = slug;
+  loadNiche(slug);
+}
+
+async function loadNiche(slug, force=false) {
+  if (!slug) return;
+  const info = masterIndex?.niches?.[slug];
+  document.getElementById('date-badge').textContent = info?.latest_brief || 'no runs yet';
+
+  const todayEl = document.getElementById('today-content');
+  todayEl.innerHTML = skeletonHTML();
+
+  try {
+    const date = info?.latest_brief;
+    if (!date) {
+      todayEl.innerHTML = emptyHTML('No briefs yet', 'Trigger the Daily Brief workflow manually from the Actions tab.');
+      document.getElementById('gems-content').innerHTML = emptyHTML('No gems yet', '');
+      document.getElementById('graveyard-content').innerHTML = emptyHTML('No graveyard entries yet', '');
+      return;
+    }
+    const key = `${slug}:${date}`;
+    if (!cache[key] || force) {
+      cache[key] = await raw(`data/${slug}/briefs/${date}.json`);
+    }
+    const brief = cache[key];
+    todayEl.innerHTML = renderToday(brief);
+    document.getElementById('gems-content').innerHTML = renderGems(brief, info);
+    document.getElementById('graveyard-content').innerHTML = renderGraveyard(brief);
+    loadWeekly(slug, info?.latest_weekly, force);
+    loadMonthly(slug, info?.latest_monthly, force);
+  } catch(e) {
+    todayEl.innerHTML = `<div class="error-box">Failed to load brief: ${esc(e.message)}</div>`;
+  }
+}
+
+async function loadWeekly(slug, key, force=false) {
+  const el = document.getElementById('weekly-content');
+  if (!key) { el.innerHTML = emptyHTML('No weekly synthesis yet', 'Generated every Sunday.'); return; }
+  try {
+    const cKey = `weekly:${slug}:${key}`;
+    if (!cache[cKey] || force) cache[cKey] = await raw(`data/${slug}/weekly/${key}.json`);
+    el.innerHTML = renderWeekly(cache[cKey]);
+  } catch(e) { el.innerHTML = `<div class="error-box">${esc(e.message)}</div>`; }
+}
+
+async function loadMonthly(slug, key, force=false) {
+  const el = document.getElementById('monthly-content');
+  if (!key) { el.innerHTML = emptyHTML('No monthly deep dive yet', 'Generated on the 1st of each month.'); return; }
+  try {
+    const cKey = `monthly:${slug}:${key}`;
+    if (!cache[cKey] || force) cache[cKey] = await raw(`data/${slug}/monthly/${key}.json`);
+    el.innerHTML = renderMonthly(cache[cKey]);
+  } catch(e) { el.innerHTML = `<div class="error-box">${esc(e.message)}</div>`; }
+}
+
+function renderToday(b) {
+  let h = '';
+
+  if (b.one_signal) {
+    h += `<div class="card">
+      <div class="card-header"><span class="card-title">Today's Signal</span><span class="card-badge badge-orange">TOP SIGNAL</span></div>
+      <div class="signal-text">${esc(b.one_signal)}</div>
+    </div>`;
+  }
+
+  if (b.openai_token_watch) {
+    h += `<div class="card">
+      <div class="card-header"><span class="card-title">OpenAI Token Watch</span><span class="card-badge badge-teal">$2M</span></div>
+      <div class="signal-text">${esc(b.openai_token_watch)}</div>
+    </div>`;
+  }
+
+  const hasPulse = b.partner_pulse?.length;
+  const hasMoves = b.company_moves?.length;
+  if (hasPulse || hasMoves) {
+    h += '<div class="grid-2">';
+    if (hasPulse) {
+      h += `<div class="card"><div class="card-header"><span class="card-title">Partner Pulse</span><span class="card-badge badge-orange">${b.partner_pulse.length}</span></div>`;
+      b.partner_pulse.forEach(p => {
+        h += `<div class="item">
+          <div class="item-title">${esc(p.partner)}</div>
+          <div class="item-meta">${esc(p.platform)}</div>
+          <div class="item-body">${esc(p.signal)}</div>
+          ${p.url ? `<a class="item-link" href="${esc(p.url)}" target="_blank" rel="noopener">→ source</a>` : ''}
+        </div>`;
+      });
+      h += '</div>';
+    }
+    if (hasMoves) {
+      h += `<div class="card"><div class="card-header"><span class="card-title">Company Moves</span><span class="card-badge badge-teal">${b.company_moves.length}</span></div>`;
+      b.company_moves.forEach(c => {
+        h += `<div class="item">
+          <div class="item-title">${esc(c.company)} <span style="color:var(--muted);font-weight:400;font-size:12px">${esc(c.batch||'')}</span></div>
+          <div class="item-body">${esc(c.what_happened)}</div>
+          <div class="item-meta" style="margin-top:4px">${esc(c.relevance)}</div>
+          ${c.url ? `<a class="item-link" href="${esc(c.url)}" target="_blank" rel="noopener">→ source</a>` : ''}
+        </div>`;
+      });
+      h += '</div>';
+    }
+    h += '</div>';
+  }
+
+  if (b.graveyard_lesson) {
+    const g = b.graveyard_lesson;
+    h += `<div class="card">
+      <div class="card-header"><span class="card-title">Graveyard Lesson</span><span class="card-badge badge-red">☠</span></div>
+      <div class="graveyard-block">
+        <div class="item-title">${esc(g.company)} <span style="color:var(--muted);font-weight:400;font-size:12px">${esc(g.batch||'')}</span></div>
+        <div class="item-body" style="margin:6px 0">${esc(g.what_they_built)}</div>
+        <div style="color:var(--red);font-size:13px;margin-bottom:4px">Why it failed: ${esc(g.why_failed)}</div>
+        <div class="lesson-box">Lesson: ${esc(g.lesson)}</div>
+        ${g.source_url ? `<a class="item-link" href="${esc(g.source_url)}" target="_blank" rel="noopener">→ read more</a>` : ''}
+      </div>
+    </div>`;
+  }
+
+  if (b.g2_gap || b.acquire_validation) {
+    h += '<div class="grid-2">';
+    if (b.g2_gap) {
+      const g = b.g2_gap;
+      h += `<div class="card">
+        <div class="card-header"><span class="card-title">G2 Gap Signal</span><span class="card-badge badge-yellow">GAP</span></div>
+        <div class="item-title">${esc(g.product_reviewed)}</div>
+        <div style="color:var(--red);font-size:13px;margin:6px 0">Top complaint: ${esc(g.top_complaint)}</div>
+        <div style="color:var(--teal);font-size:13px">Opportunity: ${esc(g.opportunity)}</div>
+      </div>`;
+    }
+    if (b.acquire_validation) {
+      h += `<div class="card">
+        <div class="card-header"><span class="card-title">Acquire.com Signal</span><span class="card-badge badge-teal">VALIDATED</span></div>
+        <div style="font-size:13px;opacity:0.9">${esc(b.acquire_validation)}</div>
+      </div>`;
+    }
+    h += '</div>';
+  }
+
+  if (b.gem_signals?.length) {
+    h += `<div class="card">
+      <div class="card-header"><span class="card-title">Gem Signals</span><span class="card-badge badge-yellow">★ ${b.gem_signals.length}</span></div>`;
+    b.gem_signals.forEach(gem => {
+      h += `<div class="item">
+        <div class="item-title" style="color:var(--yellow)">★ ${esc(gem.company)}</div>
+        <div class="item-body" style="margin:4px 0">${esc(gem.signal)}</div>
+        <div class="gem-criteria">${(gem.criteria_met||[]).map(c => `<span class="gem-tag">${esc(c)}</span>`).join('')}</div>
+      </div>`;
+    });
+    h += '</div>';
+  }
+
+  if (b.what_to_do) {
+    h += `<div class="card">
+      <div class="card-header"><span class="card-title">Action</span></div>
+      <div class="action-box">${esc(b.what_to_do)}</div>
+    </div>`;
+  }
+
+  if (b.reading_list?.length) {
+    h += `<div class="card"><div class="card-header"><span class="card-title">Reading List</span></div>`;
+    b.reading_list.forEach(r => {
+      h += `<div class="reading-item">
+        <div>
+          <a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>
+          <div class="reading-why">${esc(r.why)}</div>
+        </div>
+      </div>`;
+    });
+    h += '</div>';
+  }
+
+  return h || emptyHTML('Brief appears empty', 'The JSON structure may be unexpected.');
+}
+
+function renderGems(b, info) {
+  const gems = b.gem_signals || [];
+  if (gems.length === 0) {
+    return `<div class="card">
+      <div class="card-header"><span class="card-title">Gem Watch</span></div>
+      ${emptyHTML('No gems flagged today', 'Gems appear when a startup hits 3+ of 7 detection criteria.')}
+    </div>`;
+  }
+  let h = `<div class="card">
+    <div class="card-header"><span class="card-title">Active Gem Watch</span><span class="card-badge badge-yellow">★ ${gems.length} today</span></div>`;
+  gems.forEach(gem => {
+    h += `<div class="item">
+      <div class="item-title" style="color:var(--yellow);font-size:15px">★ ${esc(gem.company)}</div>
+      <div class="item-body" style="margin:5px 0">${esc(gem.signal)}</div>
+      <div class="gem-criteria">${(gem.criteria_met||[]).map(c => `<span class="gem-tag">${esc(c)}</span>`).join('')}</div>
+    </div>`;
+  });
+  h += '</div>';
+
+  h += `<div class="card" style="border-color:rgba(255,214,10,0.2)">
+    <div class="card-header"><span class="card-title">Gem Criteria</span></div>
+    <div style="font-size:13px;color:var(--muted);line-height:2">
+      Flag at <strong style="color:var(--yellow)">3+ criteria</strong> confirmed:<br>
+      ① OpenAI token grant confirmed or rumored<br>
+      ② YC partner publicly mentioned / endorsed<br>
+      ③ HN Show HN post in last 30 days<br>
+      ④ G2 competitor has this exact complaint<br>
+      ⑤ Acquire.com validates this niche has buyers<br>
+      ⑥ Dead startup in same space (timing right now)<br>
+      ⑦ Multiple YC batches attempted this (persistent demand)
+    </div>
+  </div>`;
+  return h;
+}
+
+function renderGraveyard(b) {
+  const g = b.graveyard_lesson;
+  if (!g) {
+    return emptyHTML('No graveyard entry today', 'Each brief includes one failure pattern from YC history.');
+  }
+  return `<div class="graveyard-block">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:10px">Failure Analysis</div>
+    <div class="item-title" style="font-size:15px">${esc(g.company)} <span style="color:var(--muted);font-weight:400;font-size:12px">${esc(g.batch||'')}</span></div>
+    <div style="margin:8px 0;font-size:13px;opacity:0.9">${esc(g.what_they_built)}</div>
+    <div style="color:var(--red);font-size:13px;margin-bottom:8px"><strong>Why it failed:</strong> ${esc(g.why_failed)}</div>
+    <div class="lesson-box"><strong>Lesson:</strong> ${esc(g.lesson)}</div>
+    ${g.source_url ? `<a class="item-link" href="${esc(g.source_url)}" target="_blank" rel="noopener">→ read the full post-mortem</a>` : ''}
+  </div>`;
+}
+
+function renderWeekly(d) {
+  if (!d) return emptyHTML('No weekly data', '');
+  let h = `<div class="card">
+    <div class="card-header"><span class="card-title">Weekly Synthesis</span><span class="card-badge badge-teal">${esc(d.week||d.date_range||'')}</span></div>`;
+
+  if (d.top_signal) {
+    h += `<div class="weekly-section"><h3>Top Signal</h3><div class="action-box">${esc(d.top_signal)}</div></div>`;
+  }
+  if (d.gem_candidates?.length) {
+    h += `<div class="weekly-section"><h3>Gem Candidates (${d.gem_candidates.length})</h3>`;
+    d.gem_candidates.forEach(g => {
+      h += `<div class="weekly-item"><strong style="color:var(--yellow)">★ ${esc(g.company||g)}</strong>${g.signal ? ' — ' + esc(g.signal) : ''}</div>`;
+    });
+    h += '</div>';
+  }
+  if (d.patterns?.length) {
+    h += `<div class="weekly-section"><h3>Patterns</h3>`;
+    d.patterns.forEach(p => {
+      h += `<div class="weekly-item">${esc(p)}</div>`;
+    });
+    h += '</div>';
+  }
+  if (d.graveyard_themes?.length) {
+    h += `<div class="weekly-section"><h3>Graveyard Themes</h3>`;
+    d.graveyard_themes.forEach(t => {
+      h += `<div class="weekly-item" style="color:var(--red)">${esc(t)}</div>`;
+    });
+    h += '</div>';
+  }
+  if (d.what_to_watch) {
+    h += `<div class="weekly-section"><h3>What to Watch</h3><div class="action-box">${esc(d.what_to_watch)}</div></div>`;
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderMonthly(d) {
+  if (!d) return emptyHTML('No monthly data', '');
+  let h = `<div class="card">
+    <div class="card-header"><span class="card-title">Monthly Deep Dive</span><span class="card-badge badge-purple">${esc(d.month||'')}</span></div>`;
+
+  if (d.thesis) {
+    h += `<div class="weekly-section"><h3>Month Thesis</h3><div class="action-box">${esc(d.thesis)}</div></div>`;
+  }
+  if (d.top_gems?.length) {
+    h += `<div class="weekly-section"><h3>Top Gems This Month</h3>`;
+    d.top_gems.forEach(g => {
+      h += `<div class="item">
+        <div class="item-title" style="color:var(--yellow)">★ ${esc(g.company||g)}</div>
+        ${g.why ? `<div class="item-body">${esc(g.why)}</div>` : ''}
+        ${g.criteria_met ? `<div class="gem-criteria">${g.criteria_met.map(c => `<span class="gem-tag">${esc(c)}</span>`).join('')}</div>` : ''}
+      </div>`;
+    });
+    h += '</div>';
+  }
+  if (d.market_map) {
+    h += `<div class="weekly-section"><h3>Market Map</h3><div style="font-size:13px;opacity:0.9">${esc(d.market_map)}</div></div>`;
+  }
+  if (d.recommended_action) {
+    h += `<div class="weekly-section"><h3>Recommended Action</h3><div class="action-box">${esc(d.recommended_action)}</div></div>`;
+  }
+  h += '</div>';
+  return h;
+}
+
+function skeletonHTML() {
+  return `
+    <div class="card">
+      <div class="skeleton" style="height:11px;width:90px;margin-bottom:14px"></div>
+      <div class="skeleton" style="height:18px;width:100%;margin-bottom:8px"></div>
+      <div class="skeleton" style="height:18px;width:75%"></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="skeleton" style="height:90px"></div></div>
+      <div class="card"><div class="skeleton" style="height:90px"></div></div>
+    </div>
+    <div class="card"><div class="skeleton" style="height:70px"></div></div>`;
+}
+
+function emptyHTML(title, sub) {
+  return `<div class="empty">
+    <div class="empty-icon">◯</div>
+    <h3>${esc(title)}</h3>
+    <p>${esc(sub)}</p>
+  </div>`;
+}
+
+init();
+</script>
+
+</body>
+</html>

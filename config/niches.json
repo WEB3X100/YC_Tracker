@@ -1,0 +1,52 @@
+{
+  "current_batch": "W26",
+  "yc_partners": [
+    {"handle": "garrytan",      "platform": "X", "focus": "broad market thesis, CEO"},
+    {"handle": "gustaf",        "platform": "X", "focus": "growth, consumer"},
+    {"handle": "daltonc",       "platform": "X", "focus": "founder advice, batch themes"},
+    {"handle": "mwseibel",      "platform": "X", "focus": "B2B, technical founders"},
+    {"handle": "jaredfriedman", "platform": "X", "focus": "technical and AI focus"},
+    {"handle": "tombfive",      "platform": "X", "focus": "fintech, European"},
+    {"handle": "paulg",         "platform": "X", "focus": "essays, big picture"}
+  ],
+  "global_noise_filters": [
+    "Generic how-to-get-into-YC articles",
+    "AI hype without a named YC company or partner as source",
+    "VC funding announcements with no YC connection",
+    "Non-YC accelerator coverage",
+    "Crypto token news unless tied to a YC company or OpenAI grant",
+    "Personal posts from YC partners unrelated to work",
+    "Rehashed news older than 48 hours",
+    "Opinion pieces without new information"
+  ],
+  "trusted_sources": [
+    {"name": "Hacker News",   "url": "https://news.ycombinator.com",               "priority": 1},
+    {"name": "YC Companies",  "url": "https://ycombinator.com/companies",           "priority": 1},
+    {"name": "TechCrunch YC", "url": "https://techcrunch.com/tag/y-combinator/",    "priority": 2},
+    {"name": "OpenAI News",   "url": "https://openai.com/news",                     "priority": 2},
+    {"name": "The Information","url": "https://theinformation.com",                 "priority": 3},
+    {"name": "G2",            "url": "https://g2.com",                              "priority": 3},
+    {"name": "Acquire.com",   "url": "https://acquire.com",                         "priority": 3},
+    {"name": "ProductHunt",   "url": "https://producthunt.com",                     "priority": 4}
+  ],
+  "gem_criteria": [
+    "Category funded 3+ times in recent YC batches",
+    "OpenAI token grant confirmed or strongly implied",
+    "YC partner public endorsement on X or LinkedIn",
+    "Category mentioned in Sam Altman or YC keynote/essay",
+    "Founder pedigree: prior YC company or tier-1 operator",
+    "Live product with paying customers at launch",
+    "Category aligns with OpenAI/Anthropic/Google API investment direction"
+  ],
+  "niches": [
+    {
+      "slug": "ai-developer-tools",
+      "name": "AI Developer Tools",
+      "description": "Tools, frameworks, and infrastructure for developers building AI-powered applications",
+      "owner": "@your-handle",
+      "active": true,
+      "extra_noise_filters": [],
+      "extra_focus_areas": []
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+name: Niche Request
+description: Request a new niche to be added to the daily brief
+title: "[NICHE] Add tracking for: Your Niche Name"
+labels: ["niche-request"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Niche name
+      placeholder: "Healthcare AI"
+    validations:
+      required: true
+
+  - type: input
+    id: slug
+    attributes:
+      label: URL-safe slug
+      placeholder: "healthcare-ai"
+      description: Lowercase, hyphens only — this becomes the folder name in data/
+    validations:
+      required: true
+
+  - type: input
+    id: owner
+    attributes:
+      label: Who owns this niche?
+      placeholder: "@your-github-handle"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What does this niche cover?
+      placeholder: "AI tools for diagnosis, clinical workflows, patient data, medical coding"
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why track this niche?
+      description: What decision or work does this research inform?
+      placeholder: "We are building a product for radiology workflows and want to track what YC is funding in adjacent spaces"
+    validations:
+      required: true
+
+  - type: textarea
+    id: search_terms
+    attributes:
+      label: Key search terms
+      description: Words and phrases that define what is IN this niche vs. noise
+      placeholder: "healthcare AI, clinical AI, medical LLM, diagnostic AI, patient data AI"
+
+  - type: textarea
+    id: noise
+    attributes:
+      label: Known noise to exclude
+      description: Things that sound related but should be excluded
+      placeholder: "Consumer health apps, fitness trackers, wellness content"
