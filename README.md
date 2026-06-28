@@ -96,6 +96,31 @@ data/
 
 ---
 
+---
+
+## GitHub AI Repo Tracker
+
+A separate daily job (`scripts/track_github_repos.py`) tracks brand-new and fast-growing AI repos across all of GitHub, independent of the YC niche briefs above.
+
+- **New 7d / New 30d** — top AI repos by stars, created in the last 7 / 30 days
+- **Growing 24h / Growing 30d** — existing AI repos with the biggest star gains, computed by diffing daily snapshots of the top 100 AI repos by stars
+
+"AI repo" = matches one of the topics: `ai`, `llm`, `machine-learning`, `artificial-intelligence`, `generative-ai`. GitHub's search API can't OR topic qualifiers in one query, so each topic is queried separately and merged.
+
+Runs unauthenticated (60 req/hr core, 10 req/min search) — no `GITHUB_TOKEN` secret required. Snapshots older than 35 days are pruned automatically.
+
+Data layout:
+```
+data/github-repos/
+  index.json                ← latest pointer
+  daily/YYYY-MM-DD.json     ← rendered output (new_7d, new_30d, growing_24h, growing_30d)
+  snapshots/YYYY-MM-DD.json ← raw star-count snapshots used for growth diffing
+```
+
+Workflow: `.github/workflows/github-repo-tracker.yml`, runs daily at 7am Toronto. Rendered in the dashboard's **GitHub Repos** tab.
+
+---
+
 ## Setup
 
 See [SETUP.md](SETUP.md) for one-time configuration.

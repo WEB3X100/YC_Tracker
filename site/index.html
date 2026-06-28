@@ -229,6 +229,7 @@
   <div class="tab" data-tab="graveyard" onclick="switchTab('graveyard')">Graveyard</div>
   <div class="tab" data-tab="weekly" onclick="switchTab('weekly')">Weekly</div>
   <div class="tab" data-tab="monthly" onclick="switchTab('monthly')">Monthly</div>
+  <div class="tab" data-tab="repos" onclick="switchTab('repos')">GitHub Repos</div>
 </nav>
 
 <main>
@@ -237,6 +238,7 @@
   <div id="tab-graveyard" class="tab-content"><div id="graveyard-content"></div></div>
   <div id="tab-weekly" class="tab-content"><div id="weekly-content"></div></div>
   <div id="tab-monthly" class="tab-content"><div id="monthly-content"></div></div>
+  <div id="tab-repos" class="tab-content"><div id="repos-content"></div></div>
 </main>
 
 <script>
@@ -268,6 +270,64 @@ function switchTab(name) {
   });
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'repos' && !cache['repos-loaded']) loadRepos();
+}
+
+async function loadRepos(force=false) {
+  const el = document.getElementById('repos-content');
+  el.innerHTML = skeletonHTML();
+  try {
+    const idx = await raw('data/github-repos/index.json');
+    if (!idx.latest) { el.innerHTML = emptyHTML('No repo data yet', 'Trigger the GitHub AI Repo Tracker workflow manually.'); return; }
+    if (!cache['repos'] || force) cache['repos'] = await raw(`data/github-repos/daily/${idx.latest}.json`);
+    cache['repos-loaded'] = true;
+    el.innerHTML = renderRepos(cache['repos']);
+  } catch (e) {
+    el.innerHTML = `<div class="error-box">
+      <strong>Could not load repo data</strong><br><br>${esc(e.message)}<br><br>
+      Make sure the GitHub AI Repo Tracker workflow has run at least once.
+    </div>`;
+  }
+}
+
+function repoListHTML(repos, starKey) {
+  if (!repos || repos.length === 0) return emptyHTML('No repos found', '');
+  let h = '';
+  repos.forEach((r, i) => {
+    const stars = starKey === 'gain' ? `+${r.star_gain.toLocaleString()}` : r.stars.toLocaleString();
+    h += `<div class="item">
+      <div class="item-title">${i+1}. <a href="${esc(r.url)}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none">${esc(r.full_name)}</a></div>
+      <div class="item-meta">${starKey === 'gain' ? `${stars} stars` : `★ ${stars}`}${r.language ? ' · ' + esc(r.language) : ''}${r.created_at ? ' · created ' + esc(r.created_at.slice(0,10)) : ''}</div>
+      <div class="item-body">${esc(r.description)}</div>
+    </div>`;
+  });
+  return h;
+}
+
+function renderRepos(d) {
+  let h = `<div class="card">
+    <div class="card-header"><span class="card-title">Top New AI Repos — Last 7 Days</span><span class="card-badge badge-orange">${(d.new_7d||[]).length}</span></div>
+    ${repoListHTML(d.new_7d, 'stars')}
+  </div>`;
+
+  h += `<div class="card">
+    <div class="card-header"><span class="card-title">Top New AI Repos — Last 30 Days</span><span class="card-badge badge-teal">${(d.new_30d||[]).length}</span></div>
+    ${repoListHTML(d.new_30d, 'stars')}
+  </div>`;
+
+  h += `<div class="card">
+    <div class="card-header"><span class="card-title">Fastest Growing — Last 24h</span><span class="card-badge badge-yellow">${(d.growing_24h||[]).length}</span></div>
+    ${d.growing_24h_baseline ? `<div class="item-meta" style="margin-bottom:8px">vs snapshot from ${esc(d.growing_24h_baseline)}</div>` : ''}
+    ${repoListHTML(d.growing_24h, 'gain')}
+  </div>`;
+
+  h += `<div class="card">
+    <div class="card-header"><span class="card-title">Fastest Growing — Last 30 Days</span><span class="card-badge badge-purple">${(d.growing_30d||[]).length}</span></div>
+    ${d.growing_30d_baseline ? `<div class="item-meta" style="margin-bottom:8px">vs snapshot from ${esc(d.growing_30d_baseline)}</div>` : ''}
+    ${repoListHTML(d.growing_30d, 'gain')}
+  </div>`;
+
+  return h;
 }
 
 async function init() {
