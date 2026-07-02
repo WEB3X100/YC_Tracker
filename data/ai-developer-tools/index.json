@@ -1,0 +1,31 @@
+{
+  "briefs": [
+    "2026-07-02"
+  ],
+  "gems": [
+    {
+      "company": "AgentTrace",
+      "first_seen": "2026-07-02",
+      "last_seen": "2026-07-02",
+      "signals_count": 1,
+      "criteria_met": [
+        "YC company launch",
+        "YC partner post"
+      ]
+    },
+    {
+      "company": "GuardRail",
+      "first_seen": "2026-07-02",
+      "last_seen": "2026-07-02",
+      "signals_count": 1,
+      "criteria_met": [
+        "YC company launch",
+        "YC partner post"
+      ]
+    }
+  ],
+  "latest_brief": "2026-07-02",
+  "latest_weekly": null,
+  "latest_monthly": null,
+  "last_run": "2026-07-02T06:39:02.022774"
+}
