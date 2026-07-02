@@ -8,7 +8,7 @@
 
 Every weekday morning, a GitHub Action runs a Python script that:
 
-1. **Searches Brave + HN** for YC startup activity across your configured niches
+1. **Searches the web (via Claude's built-in web search) + HN** for YC startup activity across your configured niches
 2. **Finds OpenAI token grant signals** — which startups Sam Altman's team is co-endorsing
 3. **Tracks YC partner posts** on X/LinkedIn — what the smartest operators are publicly excited about
 4. **Analyzes dead YC startup failure patterns** (YC Graveyard lessons)
@@ -53,9 +53,8 @@ A startup becomes a **gem candidate** when it hits 3+ of these criteria:
 ```
 GitHub Actions (cron: weekdays 7am ET)
     └── scripts/generate_brief.py
-            ├── Brave Search API      ($3/month)
             ├── HN Algolia API        (free)
-            └── Claude API            (synthesis)
+            └── Claude API            (web search + synthesis, single call)
                     └── commits JSON to data/{niche}/briefs/
                             └── Vercel serves site/index.html
                                     └── reads via raw.githubusercontent.com
@@ -88,11 +87,10 @@ data/
 
 | Service | Cost |
 |---------|------|
-| Brave Search API | ~$3/month |
-| Anthropic Claude API | ~$5–15/month |
+| Anthropic Claude API (incl. web search) | ~$8–20/month |
 | GitHub Actions | Free (2,000 min/month) |
 | Vercel | Free tier |
-| **Total** | **~$8–18/month** |
+| **Total** | **~$8–20/month** |
 
 ---
 

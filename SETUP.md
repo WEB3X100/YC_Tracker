@@ -7,8 +7,7 @@ One-time setup to get the YC Startup Intelligence Tracker running.
 ## Prerequisites
 
 - GitHub account with Actions enabled on this repo
-- Brave Search API key — sign up at [brave.com/search/api](https://brave.com/search/api) (~$3/month)
-- Anthropic API key — get at [console.anthropic.com](https://console.anthropic.com)
+- Anthropic API key — get at [console.anthropic.com](https://console.anthropic.com) (web search is billed per-search on top of normal token usage; see [Cost](README.md#cost))
 - Vercel account (free) for dashboard hosting
 
 ---
@@ -20,9 +19,10 @@ Go to **Settings → Secrets and Variables → Actions → New repository secret
 | Secret Name | Value |
 |-------------|-------|
 | `ANTHROPIC_API_KEY` | Your Anthropic API key (starts with `sk-ant-`) |
-| `BRAVE_API_KEY` | Your Brave Search API key |
 
-Never commit these values. GitHub Secrets are the only safe place to store them.
+That's the only secret required — the script uses Claude's built-in web search tool instead of a separate search API, so there's no Brave key to manage.
+
+Never commit this value. GitHub Secrets are the only safe place to store it.
 
 ---
 

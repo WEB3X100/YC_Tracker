@@ -18,7 +18,6 @@ CONFIG_DIR = ROOT / "config"
 DATA_DIR = ROOT / "data"
 
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
-BRAVE_API_KEY = os.environ.get("BRAVE_API_KEY", "")
 MODE = sys.argv[1] if len(sys.argv) > 1 else "daily"
 
 
@@ -76,22 +75,6 @@ def save_master_index(master):
 
 # ── SEARCH ────────────────────────────────────────────────────────────────────
 
-def search_brave(query, count=8, freshness="pd"):
-    if not BRAVE_API_KEY:
-        return []
-    try:
-        r = requests.get(
-            "https://api.search.brave.com/res/v1/web/search",
-            headers={"Accept": "application/json", "X-Subscription-Token": BRAVE_API_KEY},
-            params={"q": query, "count": count, "freshness": freshness},
-            timeout=12,
-        )
-        r.raise_for_status()
-        return [{"title": x.get("title",""), "url": x.get("url",""), "description": x.get("description","")} for x in r.json().get("web",{}).get("results",[])]
-    except Exception as e:
-        print(f"  [BRAVE] {query[:40]}: {e}")
-        return []
-
 def search_hn(query, hours_back=24):
     cutoff = int((datetime.now() - timedelta(hours=hours_back)).timestamp())
     try:
@@ -109,14 +92,19 @@ def search_hn(query, hours_back=24):
 
 # ── CLAUDE ────────────────────────────────────────────────────────────────────
 
-def call_claude(prompt, data):
+def call_claude(prompt, hn_data=None, max_searches=12):
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+    content = prompt
+    if hn_data:
+        content += "\n\n## Hacker News Data (Algolia, last 24h)\n\n" + json.dumps(hn_data, indent=2)
+    content += "\n\nUse the web_search tool to research the topics above before answering. Output valid JSON only as your final message. No markdown fences, no commentary."
     msg = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=4096,
-        messages=[{"role": "user", "content": prompt + "\n\n## Search Data\n\n" + json.dumps(data, indent=2) + "\n\nOutput valid JSON only. No markdown fences."}],
+        model="claude-sonnet-5",
+        max_tokens=8192,
+        tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": max_searches}],
+        messages=[{"role": "user", "content": content}],
     )
-    return msg.content[0].text
+    return "".join(block.text for block in msg.content if block.type == "text")
 
 def parse_json(text):
     t = text.strip()
@@ -139,21 +127,10 @@ def run_daily(niche, global_cfg):
     paths = niche_paths(slug)
     paths["briefs"].mkdir(parents=True, exist_ok=True)
 
-    searches = {
-        "openai_token":    search_brave(f"OpenAI $2M token grant YC startup 2025 2026", count=5),
-        "sama":           search_brave(f'site:x.com sama OR "sam altman" YC startup AI 2026', count=4, freshness="pd"),
-        "yc_niche":       search_brave(f"Y Combinator {name} startup launch 2025 2026", count=8),
-        "yc_funding":     search_brave(f"YC {name} funding raised seed 2026", count=5, freshness="pw"),
-        "hn_yc":          search_hn(f"YC {name}"),
-        "hn_show":        search_hn(f"Show HN {name}"),
-        "graveyard":      search_brave(f"YC startup failed {name} post-mortem shutdown why", count=6),
-        "graveyard_site": search_brave(f"dead YC startup {name} graveyard lessons learned", count=5),
-        "g2":             search_brave(f"site:g2.com {name} reviews missing features complaints 2025 2026", count=5, freshness="pm"),
-        "acquire":        search_brave(f"site:acquire.com {name} SaaS for sale revenue", count=4),
-        "a16z":           search_brave(f"a16z portfolio {name} company 2025 2026", count=4, freshness="pm"),
+    hn_data = {
+        "hn_yc":   search_hn(f"YC {name}"),
+        "hn_show": search_hn(f"Show HN {name}"),
     }
-    for handle in ["garrytan", "gustaf", "daltonc", "mwseibel"]:
-        searches[f"p_{handle}"] = search_brave(f'site:x.com "{handle}" startup AI', count=3, freshness="pd")
 
     prompt = f"""You are a builder intelligence agent. Generate a daily brief for a startup builder in the {name} space.
 
@@ -164,8 +141,16 @@ Noise filters (exclude anything matching these):
 
 Signal hierarchy: OpenAI token grants > YC partner posts > YC company launches > Graveyard lessons > G2 gaps > Acquire validation > a16z signals.
 
-For graveyard_lesson: find a REAL dead YC startup in {name}. Explain why it actually failed (not PR reason).
-For g2_gap: find a REAL product on G2 with verified complaints. Explain the gap.
+Research each of the following before answering:
+- OpenAI token grant news tied to YC startups (query something like: OpenAI token grant YC startup 2026)
+- Recent posts from YC partners (garrytan, gustaf, daltonc, mwseibel) on X about {name}
+- Y Combinator {name} startup launches (2025-2026)
+- YC {name} funding/seed rounds (last 1-2 weeks)
+- A dead/shutdown YC startup in {name} and why it actually failed (not the PR reason) — for graveyard_lesson
+- G2 reviews for a real {name} product with verified complaints — for g2_gap
+- Acquire.com listings validating demand in {name}
+- a16z portfolio companies in {name}
+
 For gem_signals: flag only if 2+ criteria confirmed.
 
 Output EXACTLY this JSON (no markdown fences):
@@ -184,7 +169,7 @@ Output EXACTLY this JSON (no markdown fences):
   "reading_list": [{{"title": "", "url": "", "why": ""}}]
 }}"""
 
-    raw = call_claude(prompt, searches)
+    raw = call_claude(prompt, hn_data, max_searches=14)
     try:
         result = parse_json(raw)
     except Exception as e:
@@ -215,18 +200,17 @@ def run_weekly(niche, global_cfg):
         if b and not b.get("parse_error"):
             past_briefs.append({k: v for k, v in b.items() if k in ["date", "one_signal", "gem_signals", "graveyard_lesson", "g2_gap"]})
 
-    searches = {
-        "yc_weekly":  search_brave(f"YC {name} startup news", count=10, freshness="pw"),
-        "g2_weekly":  search_brave(f"site:g2.com {name} reviews 2026", count=8, freshness="pw"),
-        "acquire":    search_brave(f"acquire.com {name} startup sold revenue", count=5, freshness="pm"),
-        "failures":   search_brave(f"YC {name} startup failed shutdown why 2022 2023 2024 2025", count=8, freshness="py"),
-        "patterns":   search_brave(f"Y Combinator batch {name} AI trend theme 2025 2026", count=8, freshness="pw"),
-    }
-
     prompt = f"""Weekly synthesis for {name}. Week ending {today}.
 
 Past 7 daily briefs:
 {json.dumps(past_briefs, indent=2)}
+
+Research this week's news before answering:
+- YC {name} startup news (past week)
+- G2 reviews for {name} products (past week)
+- Acquire.com listings for {name} startups sold/revenue
+- YC {name} startup failures/shutdowns (2022-2025) and why
+- Y Combinator batch trends/themes in {name} (2025-2026)
 
 Synthesize category patterns, gem updates, failure patterns, G2 gap, acquire validation.
 
@@ -245,7 +229,7 @@ Output EXACTLY this JSON (no markdown fences):
   "reading_list": [{{"title": "", "url": "", "why": ""}}]
 }}"""
 
-    raw = call_claude(prompt, searches)
+    raw = call_claude(prompt, max_searches=8)
     try:
         result = parse_json(raw)
     except Exception as e:
@@ -276,18 +260,17 @@ def run_monthly(niche, global_cfg):
             d = json.load(f)
             past_weeklies.append({k: v for k, v in d.items() if k in ["week_ending", "week_in_one_paragraph", "graveyard_pattern"]})
 
-    searches = {
-        "monthly_yc":  search_brave(f"Y Combinator {name} news funding 2026", count=10, freshness="pm"),
-        "failures":    search_brave(f"YC {name} startup post-mortem failure 2022 2023 2024 2025", count=12, freshness="py"),
-        "a16z":        search_brave(f"a16z portfolio {name} company 2025 2026", count=8, freshness="pm"),
-        "acquire":     search_brave(f"acquire.com {name} business sold revenue 2025 2026", count=8, freshness="pm"),
-        "direction":   search_brave(f"{name} AI startup market direction trend 2026", count=10, freshness="pm"),
-    }
-
     prompt = f"""Monthly deep dive for {name}. Month: {month}.
 
 Past weekly syntheses:
 {json.dumps(past_weeklies, indent=2)}
+
+Research this month's landscape before answering:
+- Y Combinator {name} news/funding this month
+- YC {name} startup post-mortems/failures (2022-2025)
+- a16z portfolio companies in {name}
+- Acquire.com {name} businesses sold/revenue
+- {name} AI startup market direction/trend for 2026
 
 Extract lasting failure patterns, gem status, market direction, accelerator landscape, recursive improvement.
 
@@ -306,7 +289,7 @@ Output EXACTLY this JSON (no markdown fences):
   "reading_list": [{{"title": "", "url": "", "why": ""}}]
 }}"""
 
-    raw = call_claude(prompt, searches)
+    raw = call_claude(prompt, max_searches=10)
     try:
         result = parse_json(raw)
     except Exception as e:
