@@ -7,26 +7,42 @@ One-time setup to get the YC Startup Intelligence Tracker running.
 ## Prerequisites
 
 - GitHub account with Actions enabled on this repo
-- Anthropic API key — get at [console.anthropic.com](https://console.anthropic.com) (web search is billed per-search on top of normal token usage; see [Cost](README.md#cost))
+- A Claude subscription (Pro or Max) with Claude Code access — no separate Anthropic API billing needed
 - Vercel account (free) for dashboard hosting
 
 ---
 
-## Step 1: Add Repository Secrets
+## Step 1: Generate a Claude Code OAuth Token
+
+The workflows run headless Claude Code, authenticated against your Claude subscription instead of a metered API key — generation usage draws from your monthly plan, not pay-per-token billing.
+
+On your own machine, with the [Claude Code CLI](https://claude.com/product/claude-code) installed and logged into your subscription, run:
+
+```
+claude setup-token
+```
+
+This prints a long-lived token. Copy it.
+
+---
+
+## Step 2: Add Repository Secrets
 
 Go to **Settings → Secrets and Variables → Actions → New repository secret** and add:
 
 | Secret Name | Value |
 |-------------|-------|
-| `ANTHROPIC_API_KEY` | Your Anthropic API key (starts with `sk-ant-`) |
+| `CLAUDE_CODE_OAUTH_TOKEN` | The token printed by `claude setup-token` |
 
-That's the only secret required — the script uses Claude's built-in web search tool instead of a separate search API, so there's no Brave key to manage.
+That's the only secret required — no `ANTHROPIC_API_KEY`, no Brave key.
 
 Never commit this value. GitHub Secrets are the only safe place to store it.
 
+**Note:** subscription plans have usage limits designed for interactive coding sessions, not scheduled bulk automation. If runs start failing with rate-limit errors, that's why — keep the niche count small (see Step 3) or fall back to a metered `ANTHROPIC_API_KEY` if you need higher throughput.
+
 ---
 
-## Step 2: Configure Your Niches
+## Step 3: Configure Your Niches
 
 Edit `config/niches.json` and add your niches:
 
@@ -45,11 +61,11 @@ Edit `config/niches.json` and add your niches:
 
 **Slug rules**: lowercase, hyphens only, no spaces. This becomes the directory name under `data/`.
 
-**Cost tip**: Start with 1–2 niches. Each active niche adds ~$1–3/month to API costs.
+**Cost tip**: Start with 1–2 niches — each active niche adds more generation calls per run, which counts against your subscription's usage limits.
 
 ---
 
-## Step 3: Create Data Directories
+## Step 4: Create Data Directories
 
 For each niche slug, create placeholder files:
 
@@ -63,7 +79,7 @@ Commit and push these.
 
 ---
 
-## Step 4: Enable GitHub Actions
+## Step 5: Enable GitHub Actions
 
 1. Go to the **Actions** tab in this repo
 2. If prompted, click **I understand my workflows, go ahead and enable them**
@@ -73,7 +89,7 @@ The first run takes ~2 minutes. Check the run log if it fails.
 
 ---
 
-## Step 5: Deploy the Dashboard
+## Step 6: Deploy the Dashboard
 
 1. Go to [vercel.com](https://vercel.com) → **Add New Project**
 2. Import this GitHub repository
@@ -85,7 +101,7 @@ Vercel auto-deploys on every push to `main` — so every morning brief auto-refr
 
 ---
 
-## Step 6: Verify Everything Works
+## Step 7: Verify Everything Works
 
 After the first successful GitHub Actions run:
 

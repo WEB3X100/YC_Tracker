@@ -5,10 +5,9 @@ Runs via GitHub Actions for daily / weekly / monthly briefs across all active ni
 Usage: python generate_brief.py [daily|weekly|monthly]
 """
 
-import anthropic
 import requests
 import json
-import os
+import subprocess
 import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -17,7 +16,6 @@ ROOT = Path(__file__).parent.parent
 CONFIG_DIR = ROOT / "config"
 DATA_DIR = ROOT / "data"
 
-ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 MODE = sys.argv[1] if len(sys.argv) > 1 else "daily"
 
 
@@ -91,20 +89,25 @@ def search_hn(query, hours_back=24):
 
 
 # ── CLAUDE ────────────────────────────────────────────────────────────────────
+# Runs headless Claude Code (authenticated via CLAUDE_CODE_OAUTH_TOKEN, drawn
+# from a Claude subscription) instead of metered ANTHROPIC_API_KEY billing.
 
 def call_claude(prompt, hn_data=None, max_searches=12):
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
     content = prompt
     if hn_data:
         content += "\n\n## Hacker News Data (Algolia, last 24h)\n\n" + json.dumps(hn_data, indent=2)
-    content += "\n\nUse the web_search tool to research the topics above before answering. Output valid JSON only as your final message. No markdown fences, no commentary."
-    msg = client.messages.create(
-        model="claude-sonnet-5",
-        max_tokens=8192,
-        tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": max_searches}],
-        messages=[{"role": "user", "content": content}],
+    content += f"\n\nUse WebSearch (up to {max_searches} searches) to research the topics above before answering. Output valid JSON only as your final message. No markdown fences, no commentary."
+
+    proc = subprocess.run(
+        ["claude", "-p", content, "--output-format", "json", "--allowedTools", "WebSearch", "--max-turns", "20"],
+        capture_output=True, text=True, timeout=600,
     )
-    return "".join(block.text for block in msg.content if block.type == "text")
+    if proc.returncode != 0:
+        raise RuntimeError(f"claude CLI exited {proc.returncode}: {proc.stderr[:2000]}")
+    payload = json.loads(proc.stdout)
+    if payload.get("is_error"):
+        raise RuntimeError(f"claude CLI reported error: {payload.get('result', '')[:2000]}")
+    return payload["result"]
 
 def parse_json(text):
     t = text.strip()
